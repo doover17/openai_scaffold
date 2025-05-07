@@ -6,11 +6,13 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     install_requires=[
-        "click>=8.1.0",
-        "openai>=1.77.0",
-        "python-dotenv>=1.0.0",
-        "tenacity>=8.0.0",
-    ],
+    "click>=8.1.0",
+    "openai>=1.0.0",
+    "python-dotenv>=1.0.0",
+    "rich>=13.0.0",
+    "textual>=0.35.0",
+    "prompt_toolkit>=3.0.0",
+],
     entry_points="""
         [console_scripts]
             chatcli=chatcli.main:cli

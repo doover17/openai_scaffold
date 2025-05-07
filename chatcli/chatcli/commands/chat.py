@@ -4,6 +4,28 @@ import json
 from datetime import datetime
 from pathlib import Path
 from openai import OpenAI
+from rich.progress import Progress, SpinnerColumn, TextColumn
+from prompt_toolkit import PromptSession
+from prompt_toolkit.key_binding import KeyBindings
+from prompt_toolkit.keys import Keys
+from chatcli.utils.formatting import (
+    console,
+    print_user_message,
+    print_assistant_message,
+    print_system_message,
+    print_error,
+)
+
+# Replace click.echo statements with rich formatting
+# For example, change:
+# click.echo(f"\nYou> {user_input}")
+# To:
+# print_user_message(user_input)
+
+# And change:
+# click.echo(f"\nAssistant> {assistant_message}")
+# To:
+# print_assistant_message(assistant_message)
 
 
 @click.command()
@@ -106,20 +128,26 @@ def chat(ctx, interactive, model, query, history_file, system_prompt):
 
 def process_response(client, conversation, model):
     """Process a message and get a response from the API."""
-    try:
-        response = client.chat.completions.create(
-            model=model, messages=conversation["messages"]
-        )
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        transient=True,
+    ) as progress:
+        progress.add_task("Thinking...", total=None)
+        try:
+            response = client.chat.completions.create(
+                model=model, messages=conversation["messages"]
+            )
 
-        assistant_message = response.choices[0].message.content
-        conversation["messages"].append(
-            {"role": "assistant", "content": assistant_message}
-        )
+            assistant_message = response.choices[0].message.content
+            conversation["messages"].append(
+                {"role": "assistant", "content": assistant_message}
+            )
 
-        click.echo(f"\nAssistant> {assistant_message}")
+            print_assistant_message(assistant_message)
 
-    except Exception as e:
-        click.echo(f"Error: {str(e)}", err=True)
+        except Exception as e:
+            print_error(str(e))
 
 
 def save_history(history, history_path):
@@ -128,3 +156,47 @@ def save_history(history, history_path):
 
     with open(history_path, "w") as f:
         json.dump(history, f, indent=2)
+
+def chat_with_prompt_toolkit(ctx, model, history_file, system_prompt):
+    """Interactive chat with keyboard shortcuts."""
+    # Create key bindings
+    bindings = KeyBindings()
+    
+    # Ctrl+C to exit
+    @bindings.add('c-c')
+    def _(event):
+        event.app.exit()
+    
+    # Ctrl+Up to browse history
+    @bindings.add('c-up')
+    def _(event):
+        # Implementation for browsing history up
+        pass
+    
+    # Ctrl+Down to browse history
+    @bindings.add('c-down')
+    def _(event):
+        # Implementation for browsing history down
+        pass
+    
+    # Create session
+    session = PromptSession(key_bindings=bindings)
+    
+    # Display available shortcuts
+    print_system_message("Keyboard shortcuts:")
+    print_system_message("Ctrl+C: Exit chat")
+    print_system_message("Ctrl+Up: Browse history up")
+    print_system_message("Ctrl+Down: Browse history down")
+    
+    # Chat loop
+    while True:
+        try:
+            user_input = session.prompt("\nYou> ")
+            
+            if user_input.lower() in ['exit', 'quit']:
+                break
+                
+            # Process response...
+            
+        except KeyboardInterrupt:
+            break

@@ -10,6 +10,7 @@ import click
 from openai import OpenAI
 from dotenv import load_dotenv
 from chatcli.commands import hello, chat
+from chatcli.commands import tui
 
 # Load environment variables from .env file
 load_dotenv()
@@ -35,6 +36,7 @@ def cli(ctx):
 # Register commands
 cli.add_command(hello)
 cli.add_command(chat)
+cli.add_command(tui)
 
 if __name__ == "__main__":
     cli()
